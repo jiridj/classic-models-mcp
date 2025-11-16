@@ -1,33 +1,68 @@
 # Classic Models MCP Server
 
-An MCP (Model Context Protocol) server that exposes the Classic Models API as MCP tools, accessible both locally via stdio and remotely via SSE with bearer token authentication.
+> **An MCP server that connects Claude Desktop to the Classic Models API**  
+> Provides 37 tools for managing products, customers, orders, and more.
 
-## Quick Start
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+---
+
+## 🚀 Quick Start
+
+Get up and running in 3 steps:
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# Run server (stdio mode)
+# 2. Configure (optional - uses defaults)
+# Edit .env file or set environment variables
+
+# 3. Run the server
 python -m src.server
 ```
 
-See [Configuration](#configuration) and [Documentation](#documentation) sections below for detailed setup instructions.
+**Next:** [Connect Claude Desktop](docs/CLAUDE_DESKTOP_CONFIG.md) to start using the tools.
 
-## Features
+---
 
-- **37 MCP Tools** covering all Classic Models API resources
-- **Dual Transport Support**: stdio (local) or SSE (remote)
-- **Bearer Token Authentication** for secure remote access
-- **Auto-authentication** with demo credentials
-- **LLM-Optimized Documentation** for all tools
+## ✨ What This Does
 
-## Installation
+This MCP server acts as a bridge between **Claude Desktop** and the **Classic Models API**, giving you access to:
 
-### Prerequisites
+- 📦 **Products** - Manage product catalog
+- 👥 **Customers** - Handle customer records
+- 📋 **Orders** - Process and track orders
+- 🏢 **Offices** - Manage office locations
+- 👔 **Employees** - Employee management
+- 💰 **Payments** - Payment tracking
+- And more...
 
-- Python 3.12 or higher
-- Classic Models API running (local or remote)
+**37 tools total** covering all CRUD operations for 8 resource types.
+
+---
+
+## 📋 Table of Contents
+
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Running the Server](#-running-the-server)
+- [Connecting Claude Desktop](#-connecting-claude-desktop)
+- [Available Tools](#-available-tools)
+- [Documentation](#-documentation)
+- [Development](#-development)
+
+---
+
+## 📦 Installation
+
+### Requirements
+
+- **Python 3.12+** - [Download Python](https://www.python.org/downloads/)
+- **Classic Models API** - Running locally or remotely
+  - Local: `http://localhost:8000`
+  - Remote: `https://qnap-jiri.myqnapcloud.com`
 
 ### Install Dependencies
 
@@ -35,76 +70,86 @@ See [Configuration](#configuration) and [Documentation](#documentation) sections
 pip install -r requirements.txt
 ```
 
-Or using `uv`:
+Or using `uv` (faster):
 
 ```bash
 uv pip install -r requirements.txt
 ```
 
-## Configuration
+---
 
-Create a `.env` file in the project root (or use environment variables):
-
-```env
-CLASSIC_MODELS_API_URL=http://localhost:8000
-SSE_PORT=3000
-SSE_BEARER_TOKEN=your-secret-token-here
-TRANSPORT=stdio  # or "sse"
-```
+## ⚙️ Configuration
 
 ### Environment Variables
 
-- `CLASSIC_MODELS_API_URL` - Base URL for the Classic Models API (default: `http://localhost:8000`)
-- `SSE_PORT` - Port for SSE server (default: `3000`)
-- `SSE_BEARER_TOKEN` - Bearer token for SSE authentication (default: `demo-token`)
-- `TRANSPORT` - Transport mode: `stdio` or `sse` (default: `stdio`)
-- `API_USERNAME` - API username (default: `demo`)
-- `API_PASSWORD` - API password (default: `demo123`)
+Create a `.env` file in the project root:
 
-## Usage
+```env
+# API Connection
+CLASSIC_MODELS_API_URL=http://localhost:8000
 
-### Running the Server
+# SSE Server (for remote access)
+SSE_PORT=3000
+SSE_BEARER_TOKEN=your-secret-token-here
 
-**Option 1: Native Python (Recommended for Development)**
+# Transport Mode
+TRANSPORT=stdio  # or "sse"
 
-**Local Access (stdio):**
+# API Credentials (optional - defaults to demo/demo123)
+API_USERNAME=demo
+API_PASSWORD=demo123
+```
+
+### Configuration Options
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLASSIC_MODELS_API_URL` | `http://localhost:8000` | Classic Models API base URL |
+| `TRANSPORT` | `stdio` | Transport mode: `stdio` or `sse` |
+| `SSE_PORT` | `3000` | Port for SSE server |
+| `SSE_BEARER_TOKEN` | `demo-token` | Bearer token for SSE authentication |
+| `API_USERNAME` | `demo` | API username |
+| `API_PASSWORD` | `demo123` | API password |
+
+> 💡 **Tip:** For development, you can skip the `.env` file - defaults work fine!
+
+---
+
+## 🏃 Running the Server
+
+### Option 1: Native Python (Recommended for Development)
+
+**stdio mode** (local, default):
 ```bash
 python -m src.server
-# Or explicitly:
-TRANSPORT=stdio python -m src.server
 ```
 
-**Remote Access (SSE):**
+**SSE mode** (remote access):
 ```bash
 TRANSPORT=sse python -m src.server
-# Server starts on port 3000 (or SSE_PORT from .env)
 ```
 
-**Option 2: Docker (Recommended for Production)**
+### Option 2: Docker (Recommended for Production)
 
-**SSE Mode:**
+**Quick start:**
 ```bash
 docker-compose up -d classic-models-mcp-sse
 ```
 
-**Build and Run:**
-```bash
-docker build -t classic-models-mcp .
-docker run -d -p 3000:3000 \
-  -e CLASSIC_MODELS_API_URL=http://host.docker.internal:8000 \
-  -e TRANSPORT=sse \
-  classic-models-mcp
-```
+**Full guide:** [Docker Setup](docs/DOCKER.md)
 
-See [Docker Setup Guide](docs/DOCKER.md) for complete Docker instructions.
+---
 
-### Connecting Claude Desktop
+## 🔌 Connecting Claude Desktop
 
-For detailed Claude Desktop configuration instructions, see the [Claude Desktop Configuration Guide](docs/CLAUDE_DESKTOP_CONFIG.md).
+### Quick Setup (stdio)
 
-**Quick Start (stdio):**
+1. **Open Claude Desktop config:**
+   - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+   - Linux: `~/.config/Claude/claude_desktop_config.json`
 
-1. Add to Claude Desktop config file:
+2. **Add this configuration:**
    ```json
    {
      "mcpServers": {
@@ -121,109 +166,120 @@ For detailed Claude Desktop configuration instructions, see the [Claude Desktop 
    }
    ```
 
-2. Restart Claude Desktop
+3. **Restart Claude Desktop**
 
-See [docs/CLAUDE_DESKTOP_CONFIG.md](docs/CLAUDE_DESKTOP_CONFIG.md) for complete setup instructions including SSE configuration.
+📖 **Full guide:** [Claude Desktop Configuration](docs/CLAUDE_DESKTOP_CONFIG.md)
 
-## API Resources
+---
 
-The server provides **37 tools** covering all CRUD operations for:
+## 🛠️ Available Tools
 
-| Resource | Tools | Operations |
-|----------|-------|------------|
-| **Product Lines** | 5 | List, Get, Create, Update, Delete |
-| **Products** | 5 | List, Get, Create, Update, Delete |
-| **Offices** | 5 | List, Get, Create, Update, Delete |
-| **Employees** | 5 | List, Get, Create, Update, Delete |
-| **Customers** | 5 | List, Get, Create, Update, Delete |
-| **Orders** | 5 | List, Get, Create, Update, Delete |
-| **Payments** | 2 | Get, Update |
-| **Order Details** | 5 | List, Get, Create, Update, Delete |
+The server provides **37 tools** organized by resource:
 
-## Tool Naming Convention
+| Resource | Tools | What You Can Do |
+|----------|-------|----------------|
+| **Products** | 5 | List, get, create, update, delete products |
+| **Product Lines** | 5 | Manage product categories |
+| **Customers** | 5 | Handle customer records |
+| **Orders** | 5 | Process and track orders |
+| **Order Details** | 5 | Manage order line items |
+| **Employees** | 5 | Employee management |
+| **Offices** | 5 | Office location management |
+| **Payments** | 2 | View and update payments |
 
-Tools follow the pattern: `classic_models_{operation}_{resource}`
+### Tool Naming Pattern
+
+All tools follow this pattern: `classic_models_{operation}_{resource}`
 
 **Examples:**
-- `classic_models_list_products` - List all products
-- `classic_models_get_product` - Get a specific product
-- `classic_models_create_product` - Create a new product
-- `classic_models_update_product` - Update a product
-- `classic_models_delete_product` - Delete a product
+- `classic_models_list_products` - Get all products
+- `classic_models_get_product` - Get one product
+- `classic_models_create_product` - Add a new product
+- `classic_models_update_product` - Modify a product
+- `classic_models_delete_product` - Remove a product
 
-## Documentation
+📖 **Complete reference:** [Tools Documentation](docs/TOOLS.md)
 
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
+---
 
-- **[Tools Reference](docs/TOOLS.md)**  
-  Complete documentation for all 37 tools with parameters, examples, and use cases.
+## 📚 Documentation
 
-- **[Claude Desktop Configuration](docs/CLAUDE_DESKTOP_CONFIG.md)**  
-  Step-by-step guide for configuring Claude Desktop via stdio or SSE.
+All documentation is in the [`docs/`](docs/) folder:
 
-- **[Docker Setup](docs/DOCKER.md)**  
-  Guide for running the server in Docker (SSE recommended, stdio possible).
+| Guide | Description |
+|-------|-------------|
+| [**Tools Reference**](docs/TOOLS.md) | Complete documentation for all 37 tools |
+| [**Claude Desktop Setup**](docs/CLAUDE_DESKTOP_CONFIG.md) | Step-by-step Claude Desktop configuration |
+| [**Docker Guide**](docs/DOCKER.md) | Running in Docker containers |
+| [**Authentication**](docs/AUTHENTICATION.md) | How authentication works |
+| [**Documentation Index**](docs/README.md) | Overview of all docs |
 
-- **[Tool Documentation Guide](docs/TOOL_DOCUMENTATION_GUIDE.md)**  
-  Best practices for writing LLM-friendly tool documentation.
+---
 
-- **[Documentation Index](docs/README.md)**  
-  Overview of all available documentation.
+## 🔗 API Reference
 
-## API Reference
+This MCP server connects to the **Classic Models API**:
 
-This MCP server connects to the [Classic Models API](https://github.com/jiridj/classic-models-api), which provides a RESTful API for the Classic Models tutorial database.
+- **Repository:** [jiridj/classic-models-api](https://github.com/jiridj/classic-models-api)
+- **Local API Schema:** `http://localhost:8000/classic-models/api/schema/`
+- **Public API Schema:** `https://qnap-jiri.myqnapcloud.com/classic-models/api/schema/`
 
-- **Local API:** `http://localhost:8000/classic-models/api/schema/`
-- **Public API:** `https://qnap-jiri.myqnapcloud.com/classic-models/api/schema/`
+---
 
-## Development
+## 💻 Development
 
 ### Project Structure
 
 ```
 classic-models-mcp/
 ├── src/
-│   ├── server.py          # Main MCP server
+│   ├── server.py          # Main MCP server entry point
 │   ├── config.py          # Configuration management
 │   ├── api/
-│   │   ├── client.py      # API HTTP client
-│   │   ├── auth.py        # Authentication manager
+│   │   ├── client.py      # HTTP client for API calls
+│   │   ├── auth.py        # JWT authentication
 │   │   └── types.py       # Type definitions
 │   └── tools/             # MCP tool implementations
-│       ├── productlines.py
 │       ├── products.py
-│       ├── offices.py
-│       ├── employees.py
 │       ├── customers.py
-│       ├── orders.py
-│       ├── payments.py
-│       └── orderdetails.py
-├── docs/                   # Documentation
-├── requirements.txt        # Python dependencies
-└── README.md              # This file
+│       └── ... (6 more)
+├── docs/                  # Documentation
+├── requirements.txt       # Python dependencies
+└── README.md             # This file
 ```
 
 ### Adding New Tools
 
-1. Create a new tool file in `src/tools/`
-2. Follow the [Tool Documentation Guide](docs/TOOL_DOCUMENTATION_GUIDE.md)
-3. Register the tool in `src/server.py`
-4. Update [docs/TOOLS.md](docs/TOOLS.md) with documentation
+1. Create tool file in `src/tools/`
+2. Follow [Tool Documentation Guide](docs/TOOL_DOCUMENTATION_GUIDE.md)
+3. Register in `src/server.py`
+4. Update [docs/TOOLS.md](docs/TOOLS.md)
 
 ### Code Style
 
-- Follow Python 3.12+ type hints
-- Use async/await for all API calls
-- Document all tools following the [Tool Documentation Guide](docs/TOOL_DOCUMENTATION_GUIDE.md)
-- Include error handling and validation
+- Python 3.12+ type hints
+- Async/await for API calls
+- Comprehensive docstrings (see [Tool Documentation Guide](docs/TOOL_DOCUMENTATION_GUIDE.md))
+- Error handling and validation
 
-## License
+---
 
-MIT
+## ❓ Getting Help
 
-## Support
-
-For issues, questions, or contributions:
+- **Documentation:** Check the [docs/](docs/) folder
 - **API Issues:** [Classic Models API Repository](https://github.com/jiridj/classic-models-api)
 - **MCP Server Issues:** Open an issue in this repository
+
+---
+
+## 📄 License
+
+MIT License - see LICENSE file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [FastMCP](https://github.com/jlowin/fastmcp)
+- Connects to [Classic Models API](https://github.com/jiridj/classic-models-api)
+- Uses the Classic Models tutorial database

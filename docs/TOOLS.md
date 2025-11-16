@@ -1,19 +1,53 @@
-# Classic Models MCP Server - Tools Documentation
+# Tools Reference
 
-> 📖 **Documentation Index:** [docs/README.md](README.md) | [Main README](../README.md)
+> 📖 **Navigation:** [Documentation Index](README.md) | [Main README](../README.md)
 
-This document provides comprehensive documentation for all available MCP tools in the Classic Models API server.
+Complete documentation for all 37 MCP tools available in the Classic Models MCP server.
 
-## Table of Contents
+---
 
-- [Product Lines Tools](#product-lines-tools)
-- [Products Tools](#products-tools)
-- [Offices Tools](#offices-tools)
-- [Employees Tools](#employees-tools)
-- [Customers Tools](#customers-tools)
-- [Orders Tools](#orders-tools)
-- [Payments Tools](#payments-tools)
-- [Order Details Tools](#order-details-tools)
+## 📋 Quick Overview
+
+| Resource | Tools | Operations Available |
+|----------|-------|---------------------|
+| **Products** | 5 | List, Get, Create, Update, Delete |
+| **Product Lines** | 5 | List, Get, Create, Update, Delete |
+| **Customers** | 5 | List, Get, Create, Update, Delete |
+| **Orders** | 5 | List, Get, Create, Update, Delete |
+| **Order Details** | 5 | List, Get, Create, Update, Delete |
+| **Employees** | 5 | List, Get, Create, Update, Delete |
+| **Offices** | 5 | List, Get, Create, Update, Delete |
+| **Payments** | 2 | Get, Update |
+
+**Total: 37 tools**
+
+---
+
+## 🔍 Tool Naming Pattern
+
+All tools follow this pattern: `classic_models_{operation}_{resource}`
+
+**Operations:**
+- `list_` - Get all items
+- `get_` - Get one item
+- `create_` - Add new item
+- `update_` - Modify existing item
+- `delete_` - Remove item
+
+**Example:** `classic_models_list_products` = List all products
+
+---
+
+## 📚 Table of Contents
+
+- [Product Lines Tools](#product-lines-tools) (5 tools)
+- [Products Tools](#products-tools) (5 tools)
+- [Offices Tools](#offices-tools) (5 tools)
+- [Employees Tools](#employees-tools) (5 tools)
+- [Customers Tools](#customers-tools) (5 tools)
+- [Orders Tools](#orders-tools) (5 tools)
+- [Payments Tools](#payments-tools) (2 tools)
+- [Order Details Tools](#order-details-tools) (5 tools)
 
 ---
 

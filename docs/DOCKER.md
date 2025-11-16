@@ -1,68 +1,58 @@
 # Docker Setup Guide
 
-This guide explains how to run the Classic Models MCP server in Docker containers, covering both SSE (recommended) and stdio transport modes.
+> 📖 **Navigation:** [Documentation Index](README.md) | [Main README](../README.md)
 
-> 📖 **Documentation Index:** [docs/README.md](README.md) | [Main README](../README.md)
+Run the Classic Models MCP server in Docker containers.
 
-## Overview
+---
 
-### SSE Transport (Recommended for Docker)
+## 🎯 Should You Use Docker?
 
-**✅ Recommended** - SSE transport works excellently in Docker:
-- Standard web service pattern
-- Easy port exposure
-- Simple networking
-- Production-ready
+| Scenario | Recommendation |
+|---------|----------------|
+| **Development (local)** | ❌ Use native Python instead |
+| **Production deployment** | ✅ Docker is great |
+| **Remote access (SSE)** | ✅ Docker works perfectly |
+| **Local stdio** | ⚠️ Possible but not recommended |
 
-### stdio Transport (Possible but Complex)
+---
 
-**⚠️ Possible but not recommended** - stdio transport can work in Docker but:
-- Requires running Docker as a command from Claude Desktop
-- More complex configuration
-- Slower startup (container initialization)
-- Less efficient than native Python execution
-- Better suited for local development without Docker
+## ✅ Prerequisites
 
-## Prerequisites
+- ✅ Docker installed
+- ✅ Docker Compose installed (optional but recommended)
+- ✅ Classic Models API accessible
 
-- Docker and Docker Compose installed
-- Classic Models API accessible (local or remote)
-- For stdio: Docker image built and available
+---
 
-## Quick Start (SSE - Recommended)
+## 🚀 Quick Start (SSE Mode - Recommended)
 
-### 1. Build the Docker Image
+### 1. Build the Image
 
 ```bash
 docker build -t classic-models-mcp .
 ```
 
-### 2. Run with Docker Compose
-
-Create a `.env` file:
+### 2. Create `.env` File
 
 ```env
 CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
 SSE_PORT=3000
 SSE_BEARER_TOKEN=your-secret-token-here
-API_USERNAME=demo
-API_PASSWORD=demo123
 ```
 
-Start the service:
+### 3. Start with Docker Compose
 
 ```bash
 docker-compose up -d classic-models-mcp-sse
 ```
 
-### 3. Configure Claude Desktop
-
-Add to Claude Desktop config:
+### 4. Connect Claude Desktop
 
 ```json
 {
   "mcpServers": {
-    "classic-models-docker": {
+    "classic-models": {
       "url": "http://localhost:3000/sse",
       "headers": {
         "Authorization": "Bearer your-secret-token-here"
@@ -72,50 +62,40 @@ Add to Claude Desktop config:
 }
 ```
 
-### 4. Verify
+**Done!** 🎉
 
-Check logs:
+---
 
-```bash
-docker-compose logs -f classic-models-mcp-sse
+## 📋 Detailed Setup
+
+### Using Docker Compose (Recommended)
+
+**1. Create `.env` file:**
+```env
+CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
+SSE_PORT=3000
+SSE_BEARER_TOKEN=your-secret-token-here
+API_USERNAME=demo
+API_PASSWORD=demo123
 ```
 
-## Docker Compose Configuration
-
-The `docker-compose.yml` file provides two services:
-
-### SSE Service (Default)
-
-```yaml
-classic-models-mcp-sse:
-  - Exposes port 3000
-  - Runs in SSE mode
-  - Auto-restarts on failure
-  - Health checks enabled
-```
-
-**Start:**
+**2. Start the service:**
 ```bash
 docker-compose up -d classic-models-mcp-sse
 ```
 
-### stdio Service (For Testing)
-
-```yaml
-classic-models-mcp-stdio:
-  - Runs in stdio mode
-  - Requires --profile stdio to start
-  - Interactive mode enabled
-```
-
-**Start:**
+**3. Check status:**
 ```bash
-docker-compose --profile stdio up -d classic-models-mcp-stdio
+docker-compose ps
+docker-compose logs -f classic-models-mcp-sse
 ```
 
-## Manual Docker Commands
+**4. Stop the service:**
+```bash
+docker-compose down
+```
 
-### SSE Mode
+### Using Docker Directly
 
 **Build:**
 ```bash
@@ -140,71 +120,20 @@ docker stop classic-models-mcp
 docker rm classic-models-mcp
 ```
 
-### stdio Mode (Not Recommended)
+---
 
-**Run:**
-```bash
-docker run -it --rm \
-  -e CLASSIC_MODELS_API_URL=http://host.docker.internal:8000 \
-  -e TRANSPORT=stdio \
-  classic-models-mcp
-```
-
-**Configure Claude Desktop for stdio Docker:**
-
-```json
-{
-  "mcpServers": {
-    "classic-models-docker-stdio": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e", "CLASSIC_MODELS_API_URL=http://host.docker.internal:8000",
-        "-e", "TRANSPORT=stdio",
-        "classic-models-mcp"
-      ]
-    }
-  }
-}
-```
-
-**⚠️ Note:** This is slower and more complex than running Python directly. Only use if you have specific requirements for containerization.
-
-## Environment Variables
-
-### Required
-
-- `CLASSIC_MODELS_API_URL` - API base URL
-  - Local API: `http://host.docker.internal:8000`
-  - Remote API: `https://your-api-server.com`
-
-### SSE-Specific
-
-- `SSE_PORT` - Port for SSE server (default: 3000)
-- `SSE_BEARER_TOKEN` - Bearer token for authentication
-- `TRANSPORT=sse` - Transport mode
-
-### Optional
-
-- `API_USERNAME` - API username (default: demo)
-- `API_PASSWORD` - API password (default: demo123)
-
-## Networking
+## 🌐 Networking
 
 ### Accessing Local API from Container
-
-If your Classic Models API runs on the host machine:
-
-**Linux:**
-```env
-CLASSIC_MODELS_API_URL=http://172.17.0.1:8000
-```
 
 **macOS/Windows:**
 ```env
 CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
+```
+
+**Linux:**
+```env
+CLASSIC_MODELS_API_URL=http://172.17.0.1:8000
 ```
 
 ### Accessing Remote API
@@ -213,9 +142,9 @@ CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
 CLASSIC_MODELS_API_URL=https://qnap-jiri.myqnapcloud.com
 ```
 
-### Docker Network
+### Same Docker Network
 
-If running API in the same Docker network:
+If API is in the same Docker network:
 
 ```yaml
 services:
@@ -226,56 +155,24 @@ services:
       - CLASSIC_MODELS_API_URL=http://api-service:8000
 ```
 
-## Production Considerations
+---
 
-### Security
+## ⚙️ Environment Variables
 
-1. **Change Default Bearer Token:**
-   ```env
-   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
-   ```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CLASSIC_MODELS_API_URL` | `http://localhost:8000` | API base URL |
+| `SSE_PORT` | `3000` | SSE server port |
+| `SSE_BEARER_TOKEN` | `demo-token` | Bearer token for SSE |
+| `TRANSPORT` | `stdio` | Transport mode (`sse` for Docker) |
+| `API_USERNAME` | `demo` | API username |
+| `API_PASSWORD` | `demo123` | API password |
 
-2. **Use HTTPS:** Configure reverse proxy (nginx/traefik) for HTTPS
+---
 
-3. **Network Isolation:** Use Docker networks to isolate services
+## 🔧 Troubleshooting
 
-4. **Non-root User:** The Dockerfile already runs as non-root user
-
-### Performance
-
-1. **Resource Limits:**
-   ```yaml
-   deploy:
-     resources:
-       limits:
-         cpus: '0.5'
-         memory: 512M
-   ```
-
-2. **Health Checks:** Already configured in docker-compose.yml
-
-3. **Restart Policy:** Set to `unless-stopped` for auto-recovery
-
-### Monitoring
-
-**View Logs:**
-```bash
-docker-compose logs -f classic-models-mcp-sse
-```
-
-**Check Status:**
-```bash
-docker-compose ps
-```
-
-**Health Check:**
-```bash
-docker inspect --format='{{.State.Health.Status}}' classic-models-mcp-sse
-```
-
-## Troubleshooting
-
-### Container Won't Start
+### ❌ Container Won't Start
 
 **Check logs:**
 ```bash
@@ -287,59 +184,68 @@ docker-compose logs classic-models-mcp-sse
 - Port already in use
 - Missing environment variables
 
-### Cannot Connect to API
+### ❌ Cannot Connect to API
 
 **Test connectivity:**
 ```bash
 docker exec classic-models-mcp-sse curl http://host.docker.internal:8000
 ```
 
-**Verify API URL:**
-- Use `host.docker.internal` for host API (macOS/Windows)
-- Use `172.17.0.1` for host API (Linux)
-- Use service name if in same Docker network
+**Fix networking:**
+- Use `host.docker.internal` (macOS/Windows)
+- Use `172.17.0.1` (Linux)
+- Or use service name if in same network
 
-### SSE Connection Refused
+### ❌ SSE Connection Refused
 
-**Check port exposure:**
+**Check:**
+1. ✅ Container is running: `docker ps`
+2. ✅ Port is exposed: `docker port classic-models-mcp-sse`
+3. ✅ Bearer token matches
+4. ✅ Firewall allows connections
+
+---
+
+## 🐳 stdio Mode (Not Recommended)
+
+**Can it work?** Yes, but it's complex and slow.
+
+**How to use:**
 ```bash
-docker port classic-models-mcp-sse
+docker run -it --rm \
+  -e CLASSIC_MODELS_API_URL=http://host.docker.internal:8000 \
+  -e TRANSPORT=stdio \
+  classic-models-mcp
 ```
 
-**Verify bearer token:**
-- Token in Claude Desktop config must match `SSE_BEARER_TOKEN`
+**Claude Desktop config:**
+```json
+{
+  "mcpServers": {
+    "classic-models": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "-e", "CLASSIC_MODELS_API_URL=http://host.docker.internal:8000",
+        "-e", "TRANSPORT=stdio",
+        "classic-models-mcp"
+      ]
+    }
+  }
+}
+```
 
-### stdio Mode Issues
+**Why not recommended:**
+- ⚠️ Slower startup (container initialization)
+- ⚠️ More complex configuration
+- ⚠️ Less efficient than native Python
+- ✅ Better: Use native Python for stdio, Docker for SSE
 
-**Container exits immediately:**
-- Ensure `-i` (interactive) flag is used
-- Check that stdin is properly connected
+---
 
-**Slow performance:**
-- This is expected - stdio via Docker adds overhead
-- Consider using SSE mode or native Python execution
+## 🏭 Production Setup
 
-## Comparison: Docker vs Native
-
-| Aspect | Native Python | Docker SSE | Docker stdio |
-|--------|--------------|------------|--------------|
-| **Setup Complexity** | Low | Medium | High |
-| **Performance** | Best | Good | Slower |
-| **Isolation** | None | Full | Full |
-| **Portability** | Requires Python | Works anywhere | Works anywhere |
-| **Production Ready** | Yes | Yes | Not recommended |
-| **Recommended Use** | Development | Production | Testing only |
-
-## Best Practices
-
-1. **Use SSE in Docker** - It's designed for containerized services
-2. **Use Native Python for stdio** - Better performance for local development
-3. **Build Images with Tags** - Use version tags for production
-4. **Use .env Files** - Keep secrets out of docker-compose.yml
-5. **Monitor Logs** - Set up log aggregation for production
-6. **Health Checks** - Already configured, monitor them
-
-## Example Production Setup
+### Example Production Configuration
 
 ```yaml
 # docker-compose.prod.yml
@@ -369,8 +275,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    networks:
-      - mcp-network
     logging:
       driver: "json-file"
       options:
@@ -378,9 +282,52 @@ services:
         max-file: "3"
 ```
 
-## Additional Resources
+### Production Best Practices
 
-- [Docker Documentation](https://docs.docker.com/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md)
+1. **Use strong tokens:**
+   ```bash
+   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
+   ```
 
+2. **Use HTTPS:** Configure reverse proxy (nginx/traefik)
+
+3. **Set resource limits:** Prevent resource exhaustion
+
+4. **Enable health checks:** Monitor container health
+
+5. **Configure logging:** Set up log rotation
+
+6. **Use secrets:** Store credentials securely
+
+---
+
+## 📊 Comparison
+
+| Aspect | Native Python | Docker SSE | Docker stdio |
+|--------|--------------|------------|--------------|
+| **Setup** | ⭐ Easy | ⭐⭐ Medium | ⭐⭐⭐ Complex |
+| **Performance** | ⭐⭐⭐ Best | ⭐⭐ Good | ⭐ Slower |
+| **Isolation** | ❌ None | ✅ Full | ✅ Full |
+| **Production** | ✅ Yes | ✅✅ Best | ❌ Not recommended |
+| **Use Case** | Development | Production | Testing only |
+
+---
+
+## 📚 Related Documentation
+
+- [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md) - Connect Claude Desktop
+- [Authentication Guide](AUTHENTICATION.md) - Understand authentication
+- [Main README](../README.md) - Project overview
+
+---
+
+## 💡 Key Takeaways
+
+1. **Use Docker for SSE** - Perfect for production
+2. **Use native Python for stdio** - Better for development
+3. **SSE is recommended** - Works great in containers
+4. **stdio in Docker is possible** - But not recommended
+
+---
+
+**Need help?** Check [troubleshooting](#-troubleshooting) or see [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md).

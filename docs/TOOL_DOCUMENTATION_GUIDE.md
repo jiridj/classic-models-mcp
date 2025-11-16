@@ -1,10 +1,23 @@
-# Tool Documentation Guide for LLMs
+# Tool Documentation Guide
 
-> 📖 **Documentation Index:** [docs/README.md](README.md) | [Main README](../README.md)
+> 📖 **Navigation:** [Documentation Index](README.md) | [Main README](../README.md)
 
-This guide outlines best practices for documenting MCP tools to make them easier for Large Language Models to understand and use correctly.
+Best practices for writing clear, LLM-friendly documentation for MCP tools.
 
-## Key Principles
+---
+
+## 🎯 Why Good Documentation Matters
+
+Good documentation helps LLMs:
+- ✅ Understand what each tool does
+- ✅ Know when to use each tool
+- ✅ Provide correct parameters
+- ✅ Handle errors properly
+- ✅ Suggest related tools
+
+---
+
+## 📋 Key Principles
 
 ### 1. **Comprehensive Docstrings**
 - Start with a clear, one-sentence summary

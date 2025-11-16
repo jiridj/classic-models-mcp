@@ -1,164 +1,139 @@
 # Authentication Guide
 
-> 📖 **Documentation Index:** [docs/README.md](README.md) | [Main README](../README.md)
+> 📖 **Navigation:** [Documentation Index](README.md) | [Main README](../README.md)
 
-This document explains how authentication is handled in the Classic Models MCP server.
+This guide explains how authentication works in the Classic Models MCP server.
 
-## Overview
+---
 
-The MCP server uses **two separate authentication mechanisms**:
+## 🎯 Two Types of Authentication
 
-1. **API Authentication** - For authenticating with the Classic Models API (JWT-based)
-2. **SSE Transport Authentication** - For securing remote access to the MCP server (Bearer token)
+The MCP server uses **two separate authentication systems**:
 
-## API Authentication (Classic Models API)
+| Type | Purpose | When Used |
+|------|---------|-----------|
+| **API Authentication** | Connect to Classic Models API | Always (for all API calls) |
+| **SSE Transport Auth** | Secure remote MCP server access | Only when using SSE transport |
+
+---
+
+## 🔐 API Authentication (Classic Models API)
+
+**What it does:** Authenticates the MCP server with the Classic Models API using JWT tokens.
 
 ### How It Works
 
-The MCP server automatically authenticates with the Classic Models API using JWT tokens.
+```
+┌─────────────────┐
+│ Server Starts   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Auto-login      │ ← Uses credentials (demo/demo123)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Get JWT Tokens  │ ← Receives access + refresh tokens
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Store in Memory │ ← Tokens kept in memory
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Use for Requests│ ← Access token in Authorization header
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Auto-refresh    │ ← On 401 errors, refresh token
+└─────────────────┘
+```
 
-#### Authentication Flow
+### Credentials
+
+**Default (for demo):**
+- Username: `demo`
+- Password: `demo123`
+
+**Override with environment variables:**
+```env
+API_USERNAME=your-username
+API_PASSWORD=your-password
+```
+
+### Token Management
+
+| Aspect | Details |
+|--------|---------|
+| **Storage** | In memory only (not saved to disk) |
+| **Refresh** | Automatic on 401 errors |
+| **Fallback** | Re-login if refresh fails |
+| **Header** | `Authorization: Bearer <access_token>` |
+
+### Configuration
+
+**Environment variables:**
+```env
+CLASSIC_MODELS_API_URL=http://localhost:8000
+API_USERNAME=demo          # Optional (default: "demo")
+API_PASSWORD=demo123       # Optional (default: "demo123")
+```
+
+**In code:**
+- Location: `src/api/auth.py` - `AuthManager` class
+- Auto-login: Happens on server startup
+- Auto-refresh: Happens automatically on 401 errors
+
+### Token Lifecycle
+
+1. **Login** → Get access + refresh tokens
+2. **Use** → Access token sent with every API request
+3. **Refresh** → Automatically refresh when token expires
+4. **Re-login** → If refresh fails, login again
+
+**You don't need to do anything** - it all happens automatically!
+
+---
+
+## 🔒 SSE Transport Authentication (MCP Server)
+
+**What it does:** Secures remote access to the MCP server when using SSE transport.
+
+### How It Works
 
 ```
-1. Server Startup
-   ↓
-2. Auto-login with credentials
-   ↓
-3. Receive JWT access + refresh tokens
-   ↓
-4. Store tokens in memory
-   ↓
-5. Use access token for all API requests
-   ↓
-6. Auto-refresh on 401 errors
-```
-
-#### Implementation Details
-
-**Location:** `src/api/auth.py` - `AuthManager` class
-
-**Credentials:**
-- **Default:** `demo` / `demo123` (hardcoded)
-- **Override:** Set `API_USERNAME` and `API_PASSWORD` environment variables
-
-**Token Management:**
-- Tokens stored **in memory only** (not persisted)
-- Access token included in `Authorization: Bearer <token>` header
-- Automatic refresh on 401 Unauthorized responses
-- Falls back to re-login if refresh fails
-
-**Code Flow:**
-
-```python
-# On startup (src/server.py)
-api_client = APIClient()
-await api_client.initialize()  # Calls ensure_authenticated()
-
-# In AuthManager (src/api/auth.py)
-async def ensure_authenticated(self):
-    if not self.access_token:
-        await self.login()  # POST /classic-models/api/auth/login/
-
-# On each API request (src/api/client.py)
-async def _request(...):
-    await self.auth.ensure_authenticated()  # Ensure token exists
-    headers = self.auth.get_headers()  # Get Authorization header
-    
-    # If 401, refresh and retry
-    if response.status_code == 401:
-        await self.auth.refresh_access_token()
-        # Retry request with new token
+┌──────────────┐
+│ Client       │
+│ Connects     │
+└──────┬───────┘
+       │
+       │ Sends: Authorization: Bearer <token>
+       ▼
+┌──────────────┐
+│ MCP Server   │
+│ Validates    │ ← Checks token matches
+└──────┬───────┘
+       │
+       ├─ Valid → Connection allowed ✅
+       │
+       └─ Invalid → Connection rejected ❌ (401)
 ```
 
 ### Configuration
 
-**Environment Variables:**
+**Default token:** `demo-token`
+
+**Override:**
 ```env
-API_USERNAME=demo          # Default: "demo"
-API_PASSWORD=demo123       # Default: "demo123"
-CLASSIC_MODELS_API_URL=http://localhost:8000
+SSE_BEARER_TOKEN=your-secret-token-here
 ```
 
-**In Code:**
-```python
-# src/config.py
-self.api_username = os.getenv("API_USERNAME", "demo")
-self.api_password = os.getenv("API_PASSWORD", "demo123")
-```
-
-### Token Lifecycle
-
-1. **Initial Login:**
-   - POST `/classic-models/api/auth/login/`
-   - Receives: `{access: "...", refresh: "...", user: {...}}`
-   - Stores both tokens in memory
-
-2. **Token Usage:**
-   - Access token sent in `Authorization: Bearer <token>` header
-   - Used for all API requests
-
-3. **Token Refresh:**
-   - Triggered automatically on 401 responses
-   - POST `/classic-models/api/auth/refresh/` with refresh token
-   - Receives new access + refresh tokens
-   - Updates stored tokens
-
-4. **Re-authentication:**
-   - If refresh fails, automatically re-logins
-   - Seamless to the user (happens in background)
-
-### Security Considerations
-
-**Current Implementation:**
-- ✅ Credentials can be overridden via environment variables
-- ✅ Tokens stored in memory (not persisted to disk)
-- ✅ Automatic token refresh
-- ⚠️ Default credentials are hardcoded (demo/demo123)
-- ⚠️ No token persistence (tokens lost on restart)
-
-**For Production:**
-- Use environment variables or secrets management
-- Consider token persistence for faster startup
-- Use secure credential storage (e.g., Docker secrets, Kubernetes secrets)
-
-## SSE Transport Authentication (MCP Server)
-
-### How It Works
-
-When using SSE transport, the MCP server requires a bearer token for remote access.
-
-#### Authentication Flow
-
-```
-1. Client connects to SSE endpoint
-   ↓
-2. Client sends Authorization: Bearer <token> header
-   ↓
-3. FastMCP validates token
-   ↓
-4. If valid: Connection established
-   If invalid: Connection rejected (401)
-```
-
-#### Implementation Details
-
-**Location:** `src/server.py`
-
-**Token Configuration:**
-- **Default:** `demo-token` (hardcoded)
-- **Override:** Set `SSE_BEARER_TOKEN` environment variable
-
-**Code:**
-```python
-# src/server.py
-from fastmcp.auth import BearerTokenAuth
-
-if config.transport == "sse":
-    auth = BearerTokenAuth(token=config.sse_bearer_token)
-    mcp = FastMCP(..., auth=auth)
-```
-
-**Client Configuration:**
+**Client configuration:**
 ```json
 {
   "mcpServers": {
@@ -172,59 +147,42 @@ if config.transport == "sse":
 }
 ```
 
-### Configuration
+> ⚠️ **Important:** The token in Claude Desktop config must match `SSE_BEARER_TOKEN` on the server.
 
-**Environment Variables:**
-```env
-SSE_BEARER_TOKEN=your-secret-token-here  # Default: "demo-token"
-```
+### When Is It Used?
 
-**In Code:**
-```python
-# src/config.py
-self.sse_bearer_token = os.getenv("SSE_BEARER_TOKEN", "demo-token")
-```
+- ✅ **SSE transport** - Required
+- ❌ **stdio transport** - Not used (local only)
 
-### Security Considerations
+---
 
-**Current Implementation:**
-- ✅ Token can be overridden via environment variable
-- ✅ Token required for SSE connections
-- ⚠️ Default token is hardcoded ("demo-token")
-- ⚠️ No token rotation or expiration
+## 📊 Quick Comparison
 
-**For Production:**
-- Use a strong, randomly generated token
-- Store token securely (environment variables, secrets management)
-- Consider token rotation mechanisms
-- Use HTTPS for SSE transport
-
-## Authentication Summary
-
-| Aspect | API Authentication | SSE Transport Auth |
-|--------|-------------------|-------------------|
+| Feature | API Authentication | SSE Transport Auth |
+|---------|-------------------|-------------------|
 | **Type** | JWT (access + refresh) | Bearer token |
-| **Purpose** | Authenticate with Classic Models API | Secure MCP server access |
-| **When Used** | All API requests | SSE transport only |
-| **Default Creds** | demo/demo123 | demo-token |
-| **Configurable** | ✅ API_USERNAME, API_PASSWORD | ✅ SSE_BEARER_TOKEN |
-| **Token Storage** | In memory | N/A (validated per request) |
+| **Purpose** | Authenticate with API | Secure MCP server |
+| **When** | All API requests | SSE connections only |
+| **Default** | demo/demo123 | demo-token |
+| **Config** | `API_USERNAME`, `API_PASSWORD` | `SSE_BEARER_TOKEN` |
+| **Storage** | In memory | N/A (validated per request) |
 | **Auto-refresh** | ✅ Yes | N/A |
-| **Location** | `src/api/auth.py` | `src/server.py` |
 
-## Configuration Examples
+---
 
-### Development (Default Credentials)
+## ⚙️ Configuration Examples
+
+### Development (Default)
 
 ```env
 # .env file
 CLASSIC_MODELS_API_URL=http://localhost:8000
 TRANSPORT=stdio
-# Uses default: demo/demo123 for API
+# Uses defaults: demo/demo123 for API
 # Uses default: demo-token for SSE (if used)
 ```
 
-### Production (Custom Credentials)
+### Production (Custom)
 
 ```env
 # .env file
@@ -248,60 +206,109 @@ environment:
   - TRANSPORT=sse
 ```
 
-## Troubleshooting
+---
 
-### API Authentication Issues
+## 🔧 Troubleshooting
 
-**Problem: "Failed to login"**
-- Check API is running and accessible
-- Verify credentials are correct
-- Check `CLASSIC_MODELS_API_URL` is correct
+### ❌ "Failed to login"
 
-**Problem: "401 Unauthorized" on requests**
-- Token may have expired
-- Auto-refresh should handle this, but check logs
-- Verify API credentials haven't changed
+**Check:**
+1. ✅ API is running and accessible
+2. ✅ Credentials are correct
+3. ✅ `CLASSIC_MODELS_API_URL` is correct
 
-**Problem: Tokens not persisting**
-- This is expected - tokens are in memory only
-- Server will re-authenticate on restart
+**Test:**
+```bash
+curl http://localhost:8000/classic-models/api/auth/login/ \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username":"demo","password":"demo123"}'
+```
 
-### SSE Authentication Issues
+### ❌ "401 Unauthorized" on API requests
 
-**Problem: "401 Unauthorized" on SSE connection**
-- Verify `SSE_BEARER_TOKEN` matches client config
-- Check token is included in Authorization header
-- Ensure transport is set to "sse"
+**This should auto-fix:**
+- Server automatically refreshes token on 401
+- If refresh fails, it re-logins automatically
 
-**Problem: Connection refused**
-- Verify SSE server is running
-- Check port is correct
-- Verify firewall settings
+**If it persists:**
+- Check API credentials haven't changed
+- Verify API is still running
+- Check server logs
 
-## Future Improvements
+### ❌ "401 Unauthorized" on SSE connection
 
-Potential enhancements for production use:
+**Check:**
+1. ✅ `SSE_BEARER_TOKEN` matches client config
+2. ✅ Token is in Authorization header
+3. ✅ Transport is set to "sse"
 
-1. **Token Persistence:**
-   - Store tokens in secure file or database
-   - Reduce re-authentication on restart
+**Verify:**
+```bash
+# On server
+echo $SSE_BEARER_TOKEN
 
-2. **Credential Management:**
-   - Integration with secrets management systems
-   - Support for credential rotation
+# In Claude Desktop config
+# Should match the token above
+```
 
-3. **Enhanced Security:**
-   - Token expiration and rotation
-   - Rate limiting
-   - Audit logging
+### ❌ Tokens not persisting
 
-4. **Multiple User Support:**
-   - Per-request authentication
-   - User context management
+**This is expected:**
+- Tokens are stored in memory only
+- Server re-authenticates on restart
+- This is by design for security
 
-## Related Documentation
+---
 
-- [Configuration Guide](../README.md#configuration)
-- [Docker Setup](DOCKER.md)
-- [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md)
+## 🔒 Security Best Practices
 
+### For Production
+
+1. **Use strong tokens:**
+   ```bash
+   # Generate secure token
+   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
+   ```
+
+2. **Use environment variables:**
+   - Don't hardcode credentials
+   - Use secrets management (Docker secrets, Kubernetes secrets, etc.)
+
+3. **Use HTTPS:**
+   - For remote SSE access
+   - Protects token in transit
+
+4. **Rotate tokens:**
+   - Change bearer tokens periodically
+   - Update credentials if compromised
+
+### Current Security Status
+
+| Aspect | Status | Notes |
+|--------|--------|-------|
+| **Default credentials** | ⚠️ Hardcoded | OK for demo, change for production |
+| **Token storage** | ✅ In memory | Secure, but lost on restart |
+| **Auto-refresh** | ✅ Enabled | Handles token expiration |
+| **HTTPS support** | ⚠️ Manual setup | Configure reverse proxy for production |
+
+---
+
+## 📚 Related Documentation
+
+- [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md) - How to configure authentication
+- [Docker Setup](DOCKER.md) - Running with authentication in Docker
+- [Main README](../README.md) - Configuration overview
+
+---
+
+## 💡 Key Takeaways
+
+1. **API authentication is automatic** - You don't need to do anything
+2. **SSE authentication requires matching tokens** - Token in client must match server
+3. **Defaults work for development** - Change for production
+4. **Tokens are in memory** - They don't persist across restarts (by design)
+
+---
+
+**Questions?** Check the [troubleshooting section](#-troubleshooting) or see [Claude Desktop Configuration](CLAUDE_DESKTOP_CONFIG.md).
