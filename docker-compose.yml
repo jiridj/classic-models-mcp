@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  classic-models-mcp-sse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: classic-models-mcp-sse
+    ports:
+      - "${SSE_PORT:-3000}:3000"
+    environment:
+      - CLASSIC_MODELS_API_URL=${CLASSIC_MODELS_API_URL:-http://host.docker.internal:8000}
+      - SSE_PORT=${SSE_PORT:-3000}
+      - SSE_BEARER_TOKEN=${SSE_BEARER_TOKEN:-demo-token}
+      - TRANSPORT=sse
+      - API_USERNAME=${API_USERNAME:-demo}
+      - API_PASSWORD=${API_PASSWORD:-demo123}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mcp-network
+
+  # Alternative: stdio mode (for testing, not typically used in Docker)
+  classic-models-mcp-stdio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: classic-models-mcp-stdio
+    environment:
+      - CLASSIC_MODELS_API_URL=${CLASSIC_MODELS_API_URL:-http://host.docker.internal:8000}
+      - TRANSPORT=stdio
+      - API_USERNAME=${API_USERNAME:-demo}
+      - API_PASSWORD=${API_PASSWORD:-demo123}
+    stdin_open: true
+    tty: true
+    networks:
+      - mcp-network
+    profiles:
+      - stdio  # Only start with --profile stdio
+
+networks:
+  mcp-network:
+    driver: bridge
+
