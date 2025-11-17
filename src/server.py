@@ -27,10 +27,10 @@ async def lifespan(app: FastMCP) -> AsyncGenerator[None, None]:
 
 
 # Initialize FastMCP server with lifespan
-# Configure authentication for SSE transport if needed
+# Configure authentication for HTTP transport if needed
 auth = None
-if config.transport == "sse":
-    auth = BearerTokenAuth(token=config.sse_bearer_token)
+if config.transport == "http":
+    auth = BearerTokenAuth(token=config.http_bearer_token)
 
 mcp = FastMCP(
     name="Classic Models API Server",
@@ -73,11 +73,11 @@ def register_all_tools():
 
 if __name__ == "__main__":
     # Run the MCP server
-    if config.transport == "sse":
+    if config.transport == "http":
         mcp.run(
-            transport="sse",
+            transport="http",
             host="0.0.0.0",
-            port=config.sse_port,
+            port=config.http_port,
         )
     else:
         # Default to stdio transport

@@ -12,7 +12,7 @@ Run the Classic Models MCP server in Docker containers.
 |---------|----------------|
 | **Development (local)** | ❌ Use native Python instead |
 | **Production deployment** | ✅ Docker is great |
-| **Remote access (SSE)** | ✅ Docker works perfectly |
+| **Remote access (HTTP)** | ✅ Docker works perfectly |
 | **Local stdio** | ⚠️ Possible but not recommended |
 
 ---
@@ -25,7 +25,7 @@ Run the Classic Models MCP server in Docker containers.
 
 ---
 
-## 🚀 Quick Start (SSE Mode - Recommended)
+## 🚀 Quick Start (HTTP Mode - Recommended)
 
 ### 1. Build the Image
 
@@ -37,14 +37,14 @@ docker build -t classic-models-mcp .
 
 ```env
 CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
-SSE_PORT=3000
-SSE_BEARER_TOKEN=your-secret-token-here
+HTTP_PORT=3000
+HTTP_BEARER_TOKEN=your-secret-token-here
 ```
 
 ### 3. Start with Docker Compose
 
 ```bash
-docker-compose up -d classic-models-mcp-sse
+docker-compose up -d classic-models-mcp-http
 ```
 
 ### 4. Connect Claude Desktop
@@ -53,7 +53,7 @@ docker-compose up -d classic-models-mcp-sse
 {
   "mcpServers": {
     "classic-models": {
-      "url": "http://localhost:3000/sse",
+      "url": "http://localhost:3000/mcp/",
       "headers": {
         "Authorization": "Bearer your-secret-token-here"
       }
@@ -73,21 +73,21 @@ docker-compose up -d classic-models-mcp-sse
 **1. Create `.env` file:**
 ```env
 CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
-SSE_PORT=3000
-SSE_BEARER_TOKEN=your-secret-token-here
+HTTP_PORT=3000
+HTTP_BEARER_TOKEN=your-secret-token-here
 API_USERNAME=demo
 API_PASSWORD=demo123
 ```
 
 **2. Start the service:**
 ```bash
-docker-compose up -d classic-models-mcp-sse
+docker-compose up -d classic-models-mcp-http
 ```
 
 **3. Check status:**
 ```bash
 docker-compose ps
-docker-compose logs -f classic-models-mcp-sse
+docker-compose logs -f classic-models-mcp-http
 ```
 
 **4. Stop the service:**
@@ -108,9 +108,9 @@ docker run -d \
   --name classic-models-mcp \
   -p 3000:3000 \
   -e CLASSIC_MODELS_API_URL=http://host.docker.internal:8000 \
-  -e SSE_PORT=3000 \
-  -e SSE_BEARER_TOKEN=demo-token \
-  -e TRANSPORT=sse \
+  -e HTTP_PORT=3000 \
+  -e HTTP_BEARER_TOKEN=demo-token \
+  -e TRANSPORT=http \
   classic-models-mcp
 ```
 
@@ -148,7 +148,7 @@ If API is in the same Docker network:
 
 ```yaml
 services:
-  classic-models-mcp-sse:
+  classic-models-mcp-http:
     networks:
       - mcp-network
     environment:
@@ -162,9 +162,9 @@ services:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLASSIC_MODELS_API_URL` | `http://localhost:8000` | API base URL |
-| `SSE_PORT` | `3000` | SSE server port |
-| `SSE_BEARER_TOKEN` | `demo-token` | Bearer token for SSE |
-| `TRANSPORT` | `stdio` | Transport mode (`sse` for Docker) |
+| `HTTP_PORT` | `3000` | HTTP server port |
+| `HTTP_BEARER_TOKEN` | `demo-token` | Bearer token for HTTP |
+| `TRANSPORT` | `stdio` | Transport mode (`http` for Docker) |
 | `API_USERNAME` | `demo` | API username |
 | `API_PASSWORD` | `demo123` | API password |
 
@@ -176,7 +176,7 @@ services:
 
 **Check logs:**
 ```bash
-docker-compose logs classic-models-mcp-sse
+docker-compose logs classic-models-mcp-http
 ```
 
 **Common issues:**
@@ -188,7 +188,7 @@ docker-compose logs classic-models-mcp-sse
 
 **Test connectivity:**
 ```bash
-docker exec classic-models-mcp-sse curl http://host.docker.internal:8000
+docker exec classic-models-mcp-http curl http://host.docker.internal:8000
 ```
 
 **Fix networking:**
@@ -196,11 +196,11 @@ docker exec classic-models-mcp-sse curl http://host.docker.internal:8000
 - Use `172.17.0.1` (Linux)
 - Or use service name if in same network
 
-### ❌ SSE Connection Refused
+### ❌ HTTP Connection Refused
 
 **Check:**
 1. ✅ Container is running: `docker ps`
-2. ✅ Port is exposed: `docker port classic-models-mcp-sse`
+2. ✅ Port is exposed: `docker port classic-models-mcp-http`
 3. ✅ Bearer token matches
 4. ✅ Firewall allows connections
 
@@ -239,7 +239,7 @@ docker run -it --rm \
 - ⚠️ Slower startup (container initialization)
 - ⚠️ More complex configuration
 - ⚠️ Less efficient than native Python
-- ✅ Better: Use native Python for stdio, Docker for SSE
+- ✅ Better: Use native Python for stdio, Docker for HTTP
 
 ---
 
@@ -261,9 +261,9 @@ services:
       - "3000:3000"
     environment:
       - CLASSIC_MODELS_API_URL=${CLASSIC_MODELS_API_URL}
-      - SSE_PORT=3000
-      - SSE_BEARER_TOKEN=${SSE_BEARER_TOKEN}
-      - TRANSPORT=sse
+      - HTTP_PORT=3000
+      - HTTP_BEARER_TOKEN=${HTTP_BEARER_TOKEN}
+      - TRANSPORT=http
     restart: always
     deploy:
       resources:
@@ -286,7 +286,7 @@ services:
 
 1. **Use strong tokens:**
    ```bash
-   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
+   HTTP_BEARER_TOKEN=$(openssl rand -hex 32)
    ```
 
 2. **Use HTTPS:** Configure reverse proxy (nginx/traefik)
@@ -303,7 +303,7 @@ services:
 
 ## 📊 Comparison
 
-| Aspect | Native Python | Docker SSE | Docker stdio |
+| Aspect | Native Python | Docker HTTP | Docker stdio |
 |--------|--------------|------------|--------------|
 | **Setup** | ⭐ Easy | ⭐⭐ Medium | ⭐⭐⭐ Complex |
 | **Performance** | ⭐⭐⭐ Best | ⭐⭐ Good | ⭐ Slower |
@@ -323,9 +323,9 @@ services:
 
 ## 💡 Key Takeaways
 
-1. **Use Docker for SSE** - Perfect for production
+1. **Use Docker for HTTP** - Perfect for production
 2. **Use native Python for stdio** - Better for development
-3. **SSE is recommended** - Works great in containers
+3. **HTTP is recommended** - Works great in containers
 4. **stdio in Docker is possible** - But not recommended
 
 ---

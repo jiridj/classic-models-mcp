@@ -13,7 +13,7 @@ The MCP server uses **two separate authentication systems**:
 | Type | Purpose | When Used |
 |------|---------|-----------|
 | **API Authentication** | Connect to Classic Models API | Always (for all API calls) |
-| **SSE Transport Auth** | Secure remote MCP server access | Only when using SSE transport |
+| **HTTP Transport Auth** | Secure remote MCP server access | Only when using HTTP transport |
 
 ---
 
@@ -100,9 +100,9 @@ API_PASSWORD=demo123       # Optional (default: "demo123")
 
 ---
 
-## 🔒 SSE Transport Authentication (MCP Server)
+## 🔒 HTTP Transport Authentication (MCP Server)
 
-**What it does:** Secures remote access to the MCP server when using SSE transport.
+**What it does:** Secures remote access to the MCP server when using Streamable HTTP transport.
 
 ### How It Works
 
@@ -130,7 +130,7 @@ API_PASSWORD=demo123       # Optional (default: "demo123")
 
 **Override:**
 ```env
-SSE_BEARER_TOKEN=your-secret-token-here
+HTTP_BEARER_TOKEN=your-secret-token-here
 ```
 
 **Client configuration:**
@@ -138,7 +138,7 @@ SSE_BEARER_TOKEN=your-secret-token-here
 {
   "mcpServers": {
     "classic-models": {
-      "url": "http://localhost:3000/sse",
+      "url": "http://localhost:3000/mcp/",
       "headers": {
         "Authorization": "Bearer demo-token"
       }
@@ -147,24 +147,24 @@ SSE_BEARER_TOKEN=your-secret-token-here
 }
 ```
 
-> ⚠️ **Important:** The token in Claude Desktop config must match `SSE_BEARER_TOKEN` on the server.
+> ⚠️ **Important:** The token in Claude Desktop config must match `HTTP_BEARER_TOKEN` on the server.
 
 ### When Is It Used?
 
-- ✅ **SSE transport** - Required
+- ✅ **HTTP transport** - Required
 - ❌ **stdio transport** - Not used (local only)
 
 ---
 
 ## 📊 Quick Comparison
 
-| Feature | API Authentication | SSE Transport Auth |
+| Feature | API Authentication | HTTP Transport Auth |
 |---------|-------------------|-------------------|
 | **Type** | JWT (access + refresh) | Bearer token |
 | **Purpose** | Authenticate with API | Secure MCP server |
-| **When** | All API requests | SSE connections only |
+| **When** | All API requests | HTTP connections only |
 | **Default** | demo/demo123 | demo-token |
-| **Config** | `API_USERNAME`, `API_PASSWORD` | `SSE_BEARER_TOKEN` |
+| **Config** | `API_USERNAME`, `API_PASSWORD` | `HTTP_BEARER_TOKEN` |
 | **Storage** | In memory | N/A (validated per request) |
 | **Auto-refresh** | ✅ Yes | N/A |
 
@@ -179,7 +179,7 @@ SSE_BEARER_TOKEN=your-secret-token-here
 CLASSIC_MODELS_API_URL=http://localhost:8000
 TRANSPORT=stdio
 # Uses defaults: demo/demo123 for API
-# Uses default: demo-token for SSE (if used)
+# Uses default: demo-token for HTTP (if used)
 ```
 
 ### Production (Custom)
@@ -189,9 +189,9 @@ TRANSPORT=stdio
 CLASSIC_MODELS_API_URL=https://api.example.com
 API_USERNAME=production-user
 API_PASSWORD=secure-password-here
-SSE_BEARER_TOKEN=$(openssl rand -hex 32)
-SSE_PORT=3000
-TRANSPORT=sse
+HTTP_BEARER_TOKEN=$(openssl rand -hex 32)
+HTTP_PORT=3000
+TRANSPORT=http
 ```
 
 ### Docker
@@ -202,8 +202,8 @@ environment:
   - CLASSIC_MODELS_API_URL=http://host.docker.internal:8000
   - API_USERNAME=${API_USERNAME}
   - API_PASSWORD=${API_PASSWORD}
-  - SSE_BEARER_TOKEN=${SSE_BEARER_TOKEN}
-  - TRANSPORT=sse
+  - HTTP_BEARER_TOKEN=${HTTP_BEARER_TOKEN}
+  - TRANSPORT=http
 ```
 
 ---
@@ -236,17 +236,17 @@ curl http://localhost:8000/classic-models/api/auth/login/ \
 - Verify API is still running
 - Check server logs
 
-### ❌ "401 Unauthorized" on SSE connection
+### ❌ "401 Unauthorized" on HTTP connection
 
 **Check:**
-1. ✅ `SSE_BEARER_TOKEN` matches client config
+1. ✅ `HTTP_BEARER_TOKEN` matches client config
 2. ✅ Token is in Authorization header
-3. ✅ Transport is set to "sse"
+3. ✅ Transport is set to "http"
 
 **Verify:**
 ```bash
 # On server
-echo $SSE_BEARER_TOKEN
+echo $HTTP_BEARER_TOKEN
 
 # In Claude Desktop config
 # Should match the token above
@@ -268,7 +268,7 @@ echo $SSE_BEARER_TOKEN
 1. **Use strong tokens:**
    ```bash
    # Generate secure token
-   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
+   HTTP_BEARER_TOKEN=$(openssl rand -hex 32)
    ```
 
 2. **Use environment variables:**
@@ -276,7 +276,7 @@ echo $SSE_BEARER_TOKEN
    - Use secrets management (Docker secrets, Kubernetes secrets, etc.)
 
 3. **Use HTTPS:**
-   - For remote SSE access
+   - For remote HTTP access
    - Protects token in transit
 
 4. **Rotate tokens:**
@@ -305,7 +305,7 @@ echo $SSE_BEARER_TOKEN
 ## 💡 Key Takeaways
 
 1. **API authentication is automatic** - You don't need to do anything
-2. **SSE authentication requires matching tokens** - Token in client must match server
+2. **HTTP authentication requires matching tokens** - Token in client must match server
 3. **Defaults work for development** - Change for production
 4. **Tokens are in memory** - They don't persist across restarts (by design)
 

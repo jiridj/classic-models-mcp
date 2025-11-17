@@ -121,4 +121,267 @@ async def test_api_client_retries_on_401(monkeypatch):
     assert headers_calls.get("refreshed") is True
 
 
+@pytest.mark.asyncio
+async def test_api_client_initialize(monkeypatch):
+    """initialize() should call ensure_authenticated."""
+    client = APIClient()
+    auth_called = {"called": False}
+
+    async def fake_ensure_authenticated():
+        auth_called["called"] = True
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+
+    await client.initialize()
+
+    assert auth_called["called"] is True
+
+
+@pytest.mark.asyncio
+async def test_api_client_post(monkeypatch):
+    """POST should send data and return response."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    fake_response = FakeHTTPResponse(200, {"id": 1, "name": "Test"})
+
+    def fake_async_client_factory(*args, **kwargs):
+        return FakeAsyncClient([fake_response])
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    data = await client.post("/classic-models/api/v1/products/", {"name": "Test"})
+
+    assert data == {"id": 1, "name": "Test"}
+
+
+@pytest.mark.asyncio
+async def test_api_client_put(monkeypatch):
+    """PUT should send data and return response."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    fake_response = FakeHTTPResponse(200, {"id": 1, "name": "Updated"})
+
+    def fake_async_client_factory(*args, **kwargs):
+        return FakeAsyncClient([fake_response])
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    data = await client.put("/classic-models/api/v1/products/1/", {"name": "Updated"})
+
+    assert data == {"id": 1, "name": "Updated"}
+
+
+@pytest.mark.asyncio
+async def test_api_client_patch(monkeypatch):
+    """PATCH should send data and return response."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    fake_response = FakeHTTPResponse(200, {"id": 1, "name": "Patched"})
+
+    def fake_async_client_factory(*args, **kwargs):
+        return FakeAsyncClient([fake_response])
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    data = await client.patch("/classic-models/api/v1/products/1/", {"name": "Patched"})
+
+    assert data == {"id": 1, "name": "Patched"}
+
+
+@pytest.mark.asyncio
+async def test_api_client_delete(monkeypatch):
+    """DELETE should not return data."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    fake_response = FakeHTTPResponse(204)
+
+    def fake_async_client_factory(*args, **kwargs):
+        return FakeAsyncClient([fake_response])
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    await client.delete("/classic-models/api/v1/products/1/")
+
+
+@pytest.mark.asyncio
+async def test_api_client_close(monkeypatch):
+    """close() should close the auth manager."""
+    client = APIClient()
+    close_called = {"called": False}
+
+    async def fake_close():
+        close_called["called"] = True
+
+    monkeypatch.setattr(client.auth, "close", fake_close)
+
+    await client.close()
+
+    assert close_called["called"] is True
+
+
+@pytest.mark.asyncio
+async def test_api_client_handles_http_status_error(monkeypatch):
+    """_request should handle HTTPStatusError with JSON error."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    class FakeHTTPStatusError(Exception):
+        def __init__(self):
+            self.response = FakeHTTPResponse(400, {"detail": "Bad request"})
+
+    def fake_async_client_factory(*args, **kwargs):
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def request(self, **kwargs):
+                import httpx
+                error = httpx.HTTPStatusError("Error", request=None, response=FakeHTTPResponse(400, {"detail": "Bad request"}))
+                error.response = FakeHTTPResponse(400, {"detail": "Bad request"})
+                raise error
+
+        return FakeClient()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    with pytest.raises(Exception, match="API request failed: 400"):
+        await client.get("/classic-models/api/v1/products/")
+
+
+@pytest.mark.asyncio
+async def test_api_client_handles_http_status_error_non_json(monkeypatch):
+    """_request should handle HTTPStatusError with non-JSON error text."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    def fake_async_client_factory(*args, **kwargs):
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def request(self, **kwargs):
+                import httpx
+                # Create response that can't be parsed as JSON
+                response = FakeHTTPResponse(400, None)
+                response.text = "Plain text error"
+                # Make json() raise an exception
+                response.json = lambda: __import__('json').loads("invalid")
+                error = httpx.HTTPStatusError("Error", request=None, response=response)
+                error.response = response
+                raise error
+
+        return FakeClient()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    with pytest.raises(Exception, match="API request failed: 400"):
+        await client.get("/classic-models/api/v1/products/")
+
+
+@pytest.mark.asyncio
+async def test_api_client_handles_request_error(monkeypatch):
+    """_request should handle RequestError."""
+    client = APIClient()
+
+    async def fake_ensure_authenticated():
+        return None
+
+    def fake_get_headers():
+        return {"Authorization": "Bearer test-token"}
+
+    monkeypatch.setattr(client.auth, "ensure_authenticated", fake_ensure_authenticated)
+    monkeypatch.setattr(client.auth, "get_headers", fake_get_headers)
+
+    def fake_async_client_factory(*args, **kwargs):
+        class FakeClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def request(self, **kwargs):
+                import httpx
+                raise httpx.RequestError("Connection failed")
+
+        return FakeClient()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", fake_async_client_factory)
+
+    with pytest.raises(Exception, match="Request failed"):
+        await client.get("/classic-models/api/v1/products/")
+
+
 

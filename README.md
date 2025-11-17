@@ -88,12 +88,12 @@ Create a `.env` file in the project root:
 # API Connection
 CLASSIC_MODELS_API_URL=http://localhost:8000
 
-# SSE Server (for remote access)
-SSE_PORT=3000
-SSE_BEARER_TOKEN=your-secret-token-here
+# HTTP Server (for remote access)
+HTTP_PORT=3000
+HTTP_BEARER_TOKEN=your-secret-token-here
 
 # Transport Mode
-TRANSPORT=stdio  # or "sse"
+TRANSPORT=stdio  # or "http"
 
 # API Credentials (optional - defaults to demo/demo123)
 API_USERNAME=demo
@@ -105,9 +105,9 @@ API_PASSWORD=demo123
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLASSIC_MODELS_API_URL` | `http://localhost:8000` | Classic Models API base URL |
-| `TRANSPORT` | `stdio` | Transport mode: `stdio` or `sse` |
-| `SSE_PORT` | `3000` | Port for SSE server |
-| `SSE_BEARER_TOKEN` | `demo-token` | Bearer token for SSE authentication |
+| `TRANSPORT` | `stdio` | Transport mode: `stdio` or `http` |
+| `HTTP_PORT` | `3000` | Port for HTTP server |
+| `HTTP_BEARER_TOKEN` | `demo-token` | Bearer token for HTTP authentication |
 | `API_USERNAME` | `demo` | API username |
 | `API_PASSWORD` | `demo123` | API password |
 
@@ -124,16 +124,16 @@ API_PASSWORD=demo123
 python -m src.server
 ```
 
-**SSE mode** (remote access):
+**HTTP mode** (remote access):
 ```bash
-TRANSPORT=sse python -m src.server
+TRANSPORT=http python -m src.server
 ```
 
 ### Option 2: Docker (Recommended for Production)
 
 **Quick start:**
 ```bash
-docker-compose up -d classic-models-mcp-sse
+docker-compose up -d classic-models-mcp-http
 ```
 
 **Full guide:** [Docker Setup](docs/DOCKER.md)

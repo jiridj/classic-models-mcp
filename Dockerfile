@@ -32,10 +32,10 @@ USER mcpuser
 ENV TRANSPORT=stdio
 ENV CLASSIC_MODELS_API_URL=http://localhost:8000
 
-# Expose port for SSE transport
+# Expose port for HTTP transport
 EXPOSE 3000
 
-# Health check (for SSE mode)
+# Health check (for HTTP mode)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import sys; sys.exit(0)" || exit 1
 

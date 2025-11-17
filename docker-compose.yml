@@ -1,18 +1,18 @@
 version: '3.8'
 
 services:
-  classic-models-mcp-sse:
+  classic-models-mcp-http:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: classic-models-mcp-sse
+    container_name: classic-models-mcp-http
     ports:
-      - "${SSE_PORT:-3000}:3000"
+      - "${HTTP_PORT:-3000}:3000"
     environment:
       - CLASSIC_MODELS_API_URL=${CLASSIC_MODELS_API_URL:-http://host.docker.internal:8000}
-      - SSE_PORT=${SSE_PORT:-3000}
-      - SSE_BEARER_TOKEN=${SSE_BEARER_TOKEN:-demo-token}
-      - TRANSPORT=sse
+      - HTTP_PORT=${HTTP_PORT:-3000}
+      - HTTP_BEARER_TOKEN=${HTTP_BEARER_TOKEN:-demo-token}
+      - TRANSPORT=http
       - API_USERNAME=${API_USERNAME:-demo}
       - API_PASSWORD=${API_PASSWORD:-demo123}
     restart: unless-stopped

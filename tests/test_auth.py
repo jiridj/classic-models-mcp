@@ -95,4 +95,109 @@ async def test_auth_ensure_authenticated_calls_login(monkeypatch):
     assert called["login"] is True
 
 
+@pytest.mark.asyncio
+async def test_auth_ensure_authenticated_skips_login_when_authenticated(monkeypatch):
+    """ensure_authenticated() should not call login when already authenticated."""
+    auth = AuthManager()
+    auth.access_token = "existing-token"
+    called = {"login": False}
+
+    async def fake_login():
+        called["login"] = True
+
+    monkeypatch.setattr(auth, "login", fake_login)
+
+    await auth.ensure_authenticated()
+
+    assert called["login"] is False
+
+
+@pytest.mark.asyncio
+async def test_auth_login_handles_http_error(monkeypatch):
+    """login() should raise exception on HTTP error."""
+    import httpx
+    auth = AuthManager()
+
+    async def fake_post(url: str, json: dict):
+        raise httpx.HTTPError("Connection error")
+
+    monkeypatch.setattr(auth.client, "post", fake_post)
+
+    with pytest.raises(Exception, match="Failed to login"):
+        await auth.login()
+
+
+@pytest.mark.asyncio
+async def test_auth_refresh_access_token_no_refresh_token(monkeypatch):
+    """refresh_access_token() should raise exception when no refresh token."""
+    auth = AuthManager()
+    auth.refresh_token = None
+
+    with pytest.raises(Exception, match="No refresh token available"):
+        await auth.refresh_access_token()
+
+
+@pytest.mark.asyncio
+async def test_auth_refresh_access_token_falls_back_to_login(monkeypatch):
+    """refresh_access_token() should fall back to login on HTTP error."""
+    import httpx
+    auth = AuthManager()
+    auth.refresh_token = "old-refresh"
+    login_called = {"called": False}
+
+    async def fake_post(url: str, json: dict):
+        if "/refresh/" in url:
+            raise httpx.HTTPError("HTTP error")
+        return FakeResponse(200, {"access": "new-access", "refresh": "new-refresh"})
+
+    async def fake_login():
+        login_called["called"] = True
+        auth.access_token = "new-access"
+        auth.refresh_token = "new-refresh"
+
+    monkeypatch.setattr(auth.client, "post", fake_post)
+    monkeypatch.setattr(auth, "login", fake_login)
+
+    await auth.refresh_access_token()
+
+    assert login_called["called"] is True
+    assert auth.access_token == "new-access"
+
+
+@pytest.mark.asyncio
+async def test_auth_get_headers_raises_when_not_authenticated():
+    """get_headers() should raise exception when not authenticated."""
+    auth = AuthManager()
+
+    with pytest.raises(Exception, match="Not authenticated"):
+        auth.get_headers()
+
+
+@pytest.mark.asyncio
+async def test_auth_get_headers_returns_headers_when_authenticated():
+    """get_headers() should return Authorization header when authenticated."""
+    auth = AuthManager()
+    auth.access_token = "test-token"
+
+    headers = auth.get_headers()
+
+    assert headers == {"Authorization": "Bearer test-token"}
+
+
+@pytest.mark.asyncio
+async def test_auth_close_closes_client(monkeypatch):
+    """close() should close the HTTP client."""
+    auth = AuthManager()
+    close_called = {"called": False}
+
+    async def fake_aclose():
+        close_called["called"] = True
+
+    monkeypatch.setattr(auth.client, "aclose", fake_aclose)
+
+    await auth.close()
+
+    assert close_called["called"] is True
+
+
 

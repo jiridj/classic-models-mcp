@@ -14,8 +14,8 @@ class Config:
         self.api_url = os.getenv("CLASSIC_MODELS_API_URL", "http://localhost:8000").rstrip("/")
         self.api_username = os.getenv("API_USERNAME", "demo")
         self.api_password = os.getenv("API_PASSWORD", "demo123")
-        self.sse_port = int(os.getenv("SSE_PORT", "3000"))
-        self.sse_bearer_token = os.getenv("SSE_BEARER_TOKEN", "demo-token")
+        self.http_port = int(os.getenv("HTTP_PORT", "3000"))
+        self.http_bearer_token = os.getenv("HTTP_BEARER_TOKEN", "demo-token")
         
         # Determine transport from CLI args or env var
         import sys

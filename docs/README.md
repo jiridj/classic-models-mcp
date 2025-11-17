@@ -33,7 +33,7 @@ This directory contains all guides and references for using and developing with 
 **Step-by-step guide for connecting Claude Desktop to the MCP server**
 
 - ✅ stdio transport setup (local)
-- ✅ SSE transport setup (remote)
+- ✅ HTTP transport setup (remote)
 - ✅ Configuration examples
 - ✅ Troubleshooting
 
@@ -45,7 +45,7 @@ This directory contains all guides and references for using and developing with 
 **Guide for running the server in Docker containers**
 
 - ✅ Dockerfile and docker-compose setup
-- ✅ SSE mode (recommended)
+- ✅ HTTP mode (recommended)
 - ✅ stdio mode (possible but not recommended)
 - ✅ Production considerations
 
@@ -57,7 +57,7 @@ This directory contains all guides and references for using and developing with 
 **How authentication works in the MCP server**
 
 - ✅ API authentication (JWT tokens)
-- ✅ SSE transport authentication
+- ✅ HTTP transport authentication
 - ✅ Configuration options
 - ✅ Security considerations
 

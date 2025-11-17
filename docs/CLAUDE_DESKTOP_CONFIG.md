@@ -11,7 +11,7 @@ This guide shows you how to connect Claude Desktop to the Classic Models MCP ser
 | Setup | Best For | Difficulty |
 |-------|----------|------------|
 | **stdio (Local)** | Development, local use | ⭐ Easy |
-| **SSE (Remote)** | Remote access, production | ⭐⭐ Medium |
+| **HTTP (Remote)** | Remote access, production | ⭐⭐ Medium |
 
 ---
 
@@ -124,22 +124,22 @@ If you use a virtual environment:
 
 ---
 
-## 🌐 Option 2: SSE (Remote) - For Remote Access
+## 🌐 Option 2: HTTP (Remote) - For Remote Access
 
-**What it does:** Connects to a server running elsewhere via HTTP.
+**What it does:** Connects to a server running elsewhere via Streamable HTTP.
 
 ### Step-by-Step Setup
 
-#### 1. Start the SSE Server
+#### 1. Start the HTTP Server
 
 On the server machine, run:
 
 ```bash
 cd /path/to/classic-models-mcp
-TRANSPORT=sse python3.12 -m src.server
+TRANSPORT=http python3.12 -m src.server
 ```
 
-The server starts on port 3000 (or your `SSE_PORT` setting).
+The server starts on port 3000 (or your `HTTP_PORT` setting).
 
 #### 2. Configure Claude Desktop
 
@@ -150,7 +150,7 @@ Add this to your Claude Desktop config:
 {
   "mcpServers": {
     "classic-models": {
-      "url": "http://localhost:3000/sse",
+      "url": "http://localhost:3000/mcp/",
       "headers": {
         "Authorization": "Bearer demo-token"
       }
@@ -164,7 +164,7 @@ Add this to your Claude Desktop config:
 {
   "mcpServers": {
     "classic-models": {
-      "url": "https://your-server.com:3000/sse",
+      "url": "https://your-server.com:3000/mcp/",
       "headers": {
         "Authorization": "Bearer your-secret-token"
       }
@@ -173,7 +173,7 @@ Add this to your Claude Desktop config:
 }
 ```
 
-> ⚠️ **Important:** The bearer token must match `SSE_BEARER_TOKEN` on the server.
+> ⚠️ **Important:** The bearer token must match `HTTP_BEARER_TOKEN` on the server.
 
 #### 3. Configure Server Environment
 
@@ -181,17 +181,17 @@ On the server, set these environment variables:
 
 ```bash
 export CLASSIC_MODELS_API_URL="http://localhost:8000"
-export SSE_PORT=3000
-export SSE_BEARER_TOKEN="your-secret-token-here"
-export TRANSPORT=sse
+export HTTP_PORT=3000
+export HTTP_BEARER_TOKEN="your-secret-token-here"
+export TRANSPORT=http
 ```
 
 Or use a `.env` file:
 ```env
 CLASSIC_MODELS_API_URL=http://localhost:8000
-SSE_PORT=3000
-SSE_BEARER_TOKEN=your-secret-token-here
-TRANSPORT=sse
+HTTP_PORT=3000
+HTTP_BEARER_TOKEN=your-secret-token-here
+TRANSPORT=http
 ```
 
 #### 4. Restart Claude Desktop
@@ -212,10 +212,10 @@ cd /path/to/classic-models-mcp
 TRANSPORT=stdio python3.12 -m src.server
 ```
 
-**SSE mode:**
+**HTTP mode:**
 ```bash
 cd /path/to/classic-models-mcp
-TRANSPORT=sse python3.12 -m src.server
+TRANSPORT=http python3.12 -m src.server
 # Should see: Server listening on port 3000
 ```
 
@@ -260,10 +260,10 @@ After restarting, you should see:
 2. Use virtual environment Python path
 3. Verify `cwd` points to project root
 
-### ❌ "Connection refused" (SSE)
+### ❌ "Connection refused" (HTTP)
 
 **Fix:**
-1. Verify SSE server is running
+1. Verify HTTP server is running
 2. Check port matches (default: 3000)
 3. Check firewall settings
 4. Verify bearer token matches
@@ -284,10 +284,10 @@ After restarting, you should see:
 
 1. **Change default bearer token:**
    ```bash
-   SSE_BEARER_TOKEN=$(openssl rand -hex 32)
+   HTTP_BEARER_TOKEN=$(openssl rand -hex 32)
    ```
 
-2. **Use HTTPS** for remote SSE access
+2. **Use HTTPS** for remote HTTP access
 
 3. **Use environment variables** for credentials:
    ```json
@@ -330,13 +330,13 @@ After restarting, you should see:
 }
 ```
 
-### SSE Configuration (Copy & Paste)
+### HTTP Configuration (Copy & Paste)
 
 ```json
 {
   "mcpServers": {
     "classic-models": {
-      "url": "http://localhost:3000/sse",
+      "url": "http://localhost:3000/mcp/",
       "headers": {
         "Authorization": "Bearer demo-token"
       }
