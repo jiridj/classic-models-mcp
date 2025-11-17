@@ -3,7 +3,6 @@ import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from fastmcp import FastMCP
-from fastmcp.auth import BearerTokenAuth
 from .config import config
 from .api.client import APIClient
 
@@ -30,7 +29,11 @@ async def lifespan(app: FastMCP) -> AsyncGenerator[None, None]:
 # Configure authentication for HTTP transport if needed
 auth = None
 if config.transport == "http":
-    auth = BearerTokenAuth(token=config.http_bearer_token)
+    from fastmcp.server.auth import StaticTokenVerifier
+    # Create a static token verifier for bearer token authentication
+    auth = StaticTokenVerifier(
+        tokens={config.http_bearer_token: {"client_id": "mcp-client", "scopes": []}}
+    )
 
 mcp = FastMCP(
     name="Classic Models API Server",

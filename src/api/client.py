@@ -30,7 +30,7 @@ class APIClient:
         headers = self.auth.get_headers()
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(verify=config.verify_ssl) as client:
                 response = await client.request(
                     method=method,
                     url=url,

@@ -14,6 +14,7 @@ class AuthManager:
         self.client = httpx.AsyncClient(
             base_url=config.api_url,
             headers={"Content-Type": "application/json"},
+            verify=config.verify_ssl,
         )
     
     async def login(self) -> None:

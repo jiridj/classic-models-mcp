@@ -61,9 +61,9 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         quantity, pricing, and order information.
         
         **When to use:**
-        - Getting details for a specific order line item
+        - Getting details for a specific order line item when you know the ID
         - Verifying order detail information
-        - Looking up order line item details
+        - Looking up order line item details by ID
         
         **Parameters:**
         - `orderdetail_id` (int, required): The unique order detail ID identifier.
@@ -71,11 +71,29 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
           Must be an existing order detail ID in the system
         
         **Returns:**
-        A dictionary containing the order detail object with all fields.
+        A dictionary containing the order detail object with all fields:
+        - `id` (int): Internal order detail identifier (auto-generated)
+        - `ordernumber` (int): Order number this line item belongs to
+        - `productcode` (str): Product code for this line item
+        - `quantityordered` (int): Quantity ordered
+        - `priceeach` (str): Price per unit in decimal format
+        - `orderlinenumber` (int): Line number within the order
         
         **Example Request:**
         ```python
         orderdetail = await classic_models_get_orderdetail(orderdetail_id=1)
+        ```
+        
+        **Example Response:**
+        ```json
+        {
+            "id": 1,
+            "ordernumber": 10100,
+            "productcode": "S10_1678",
+            "quantityordered": 30,
+            "priceeach": "136.00",
+            "orderlinenumber": 1
+        }
         ```
         
         **Errors:**
@@ -84,10 +102,73 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         - `500 Internal Server Error`: Server error occurred
         
         **Related Tools:**
+        - Use `classic_models_get_orderdetail_by_key` to lookup by order number and product code
         - Use `classic_models_get_order` to get the order this detail belongs to
         - Use `classic_models_get_product` to get product details
         """
         return await api_client.get(f"/classic-models/api/v1/orderdetails/{orderdetail_id}/")
+    
+    
+    @mcp.tool()
+    async def classic_models_get_orderdetail_by_key(ordernumber: int, productcode: str) -> dict:
+        """Retrieve detailed information about a specific order detail by order number and product code.
+        
+        This tool fetches complete order detail information using the composite key
+        (order number and product code). This is the traditional lookup method and
+        maintains backward compatibility.
+        
+        **When to use:**
+        - Getting details for a specific order line item when you know the order number and product code
+        - Looking up order details using the composite key
+        - Maintaining compatibility with existing workflows
+        
+        **Parameters:**
+        - `ordernumber` (int, required): The order number this line item belongs to.
+          Must be an existing order number in the system
+        - `productcode` (str, required): The product code for this line item.
+          Example: "S10_1678" or "S18_1749"
+          Must be an existing product code
+        
+        **Returns:**
+        A dictionary containing the order detail object with all fields:
+        - `id` (int): Internal order detail identifier (auto-generated)
+        - `ordernumber` (int): Order number this line item belongs to
+        - `productcode` (str): Product code for this line item
+        - `quantityordered` (int): Quantity ordered
+        - `priceeach` (str): Price per unit in decimal format
+        - `orderlinenumber` (int): Line number within the order
+        
+        **Example Request:**
+        ```python
+        orderdetail = await classic_models_get_orderdetail_by_key(
+            ordernumber=10100,
+            productcode="S10_1678"
+        )
+        ```
+        
+        **Example Response:**
+        ```json
+        {
+            "id": 1,
+            "ordernumber": 10100,
+            "productcode": "S10_1678",
+            "quantityordered": 30,
+            "priceeach": "136.00",
+            "orderlinenumber": 1
+        }
+        ```
+        
+        **Errors:**
+        - `404 Not Found`: The order detail does not exist for this order number/product code combination
+        - `401 Unauthorized`: Authentication failed (automatically retried)
+        - `500 Internal Server Error`: Server error occurred
+        
+        **Related Tools:**
+        - Use `classic_models_get_orderdetail` to lookup by ID
+        - Use `classic_models_get_order` to get the order this detail belongs to
+        - Use `classic_models_get_product` to get product details
+        """
+        return await api_client.get(f"/classic-models/api/v1/orderdetails/{ordernumber}/{productcode}/")
     
     
     @mcp.tool()
@@ -121,7 +202,13 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
           Typically sequential (1, 2, 3, etc.). Range: -32768 to 32767
         
         **Returns:**
-        A dictionary containing the created order detail object with all fields including the generated `id`.
+        A dictionary containing the created order detail object with all fields:
+        - `id` (int): Internal order detail identifier (auto-generated, included in response)
+        - `ordernumber` (int): Order number this line item belongs to
+        - `productcode` (str): Product code for this line item
+        - `quantityordered` (int): Quantity ordered
+        - `priceeach` (str): Price per unit in decimal format
+        - `orderlinenumber` (int): Line number within the order
         
         **Example Request:**
         ```python
@@ -164,7 +251,7 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         priceeach: Optional[str] = None,
         orderlinenumber: Optional[int] = None,
     ) -> dict:
-        """Update specific fields of an existing order detail record.
+        """Update specific fields of an existing order detail record by ID.
         
         This tool allows partial updates to an order detail. Only provided fields will be updated.
         Use this for making changes to order line items without affecting other fields.
@@ -185,7 +272,13 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         - `orderlinenumber` (int, optional): Updated line number. Range: -32768 to 32767
         
         **Returns:**
-        A dictionary containing the updated order detail object.
+        A dictionary containing the updated order detail object with all fields:
+        - `id` (int): Internal order detail identifier (auto-generated)
+        - `ordernumber` (int): Order number this line item belongs to
+        - `productcode` (str): Product code for this line item
+        - `quantityordered` (int): Quantity ordered
+        - `priceeach` (str): Price per unit in decimal format
+        - `orderlinenumber` (int): Line number within the order
         
         **Example Request:**
         ```python
@@ -203,6 +296,9 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         - `404 Not Found`: Product code does not exist (if updating productcode)
         - `401 Unauthorized`: Authentication failed (automatically retried)
         - `500 Internal Server Error`: Server error occurred
+        
+        **Related Tools:**
+        - Use `classic_models_update_orderdetail_by_key` to update using composite key
         """
         data = {}
         if ordernumber is not None:
@@ -220,14 +316,84 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
     
     
     @mcp.tool()
+    async def classic_models_update_orderdetail_by_key(
+        ordernumber: int,
+        productcode: str,
+        quantityordered: Optional[int] = None,
+        priceeach: Optional[str] = None,
+        orderlinenumber: Optional[int] = None,
+    ) -> dict:
+        """Update specific fields of an existing order detail record by composite key.
+        
+        This tool allows partial updates to an order detail using the composite key
+        (order number and product code). Only provided fields will be updated.
+        This maintains backward compatibility with existing workflows.
+        
+        **When to use:**
+        - Updating quantities ordered when you know the order number and product code
+        - Adjusting prices using composite key lookup
+        - Modifying order line numbers using composite key
+        
+        **Parameters:**
+        - `ordernumber` (int, required): The order number of the order detail to update.
+          Must be an existing order number
+        - `productcode` (str, required): The product code of the order detail to update.
+          Must be an existing product code
+        - `quantityordered` (int, optional): Updated quantity ordered. Must be a positive integer
+        - `priceeach` (str, optional): Updated price per unit in decimal format
+        - `orderlinenumber` (int, optional): Updated line number. Range: -32768 to 32767
+        
+        **Returns:**
+        A dictionary containing the updated order detail object with all fields:
+        - `id` (int): Internal order detail identifier (auto-generated)
+        - `ordernumber` (int): Order number this line item belongs to
+        - `productcode` (str): Product code for this line item
+        - `quantityordered` (int): Quantity ordered
+        - `priceeach` (str): Price per unit in decimal format
+        - `orderlinenumber` (int): Line number within the order
+        
+        **Example Request:**
+        ```python
+        result = await classic_models_update_orderdetail_by_key(
+            ordernumber=10100,
+            productcode="S10_1678",
+            quantityordered=35,
+            priceeach="140.00"
+        )
+        ```
+        
+        **Errors:**
+        - `404 Not Found`: The order detail does not exist for this order number/product code combination
+        - `400 Bad Request`: Invalid data
+        - `401 Unauthorized`: Authentication failed (automatically retried)
+        - `500 Internal Server Error`: Server error occurred
+        
+        **Related Tools:**
+        - Use `classic_models_update_orderdetail` to update using ID
+        """
+        data = {}
+        if quantityordered is not None:
+            data["quantityordered"] = quantityordered
+        if priceeach is not None:
+            data["priceeach"] = priceeach
+        if orderlinenumber is not None:
+            data["orderlinenumber"] = orderlinenumber
+        
+        return await api_client.patch(
+            f"/classic-models/api/v1/orderdetails/{ordernumber}/{productcode}/",
+            data
+        )
+    
+    
+    @mcp.tool()
     async def classic_models_delete_orderdetail(orderdetail_id: int) -> None:
-        """Remove an order detail (line item) from the system.
+        """Remove an order detail (line item) from the system by ID.
         
         This tool permanently deletes an order detail record. Use with caution as this
         affects the order total and product quantities.
         
         **When to use:**
-        - Removing items from orders
+        - Removing items from orders when you know the ID
         - Cleaning up incorrect order line items
         - Removing cancelled line items
         
@@ -248,6 +414,51 @@ def register_orderdetail_tools(mcp: FastMCP, api_client: APIClient):
         - `400 Bad Request`: Cannot delete
         - `401 Unauthorized`: Authentication failed (automatically retried)
         - `500 Internal Server Error`: Server error occurred
+        
+        **Related Tools:**
+        - Use `classic_models_delete_orderdetail_by_key` to delete using composite key
         """
         await api_client.delete(f"/classic-models/api/v1/orderdetails/{orderdetail_id}/")
+    
+    
+    @mcp.tool()
+    async def classic_models_delete_orderdetail_by_key(ordernumber: int, productcode: str) -> None:
+        """Remove an order detail (line item) from the system by composite key.
+        
+        This tool permanently deletes an order detail record using the composite key
+        (order number and product code). Use with caution as this affects the order
+        total and product quantities. This maintains backward compatibility.
+        
+        **When to use:**
+        - Removing items from orders when you know the order number and product code
+        - Cleaning up incorrect order line items using composite key
+        - Removing cancelled line items using composite key
+        
+        **Parameters:**
+        - `ordernumber` (int, required): The order number of the order detail to delete.
+          Must be an existing order number
+        - `productcode` (str, required): The product code of the order detail to delete.
+          Must be an existing product code
+        
+        **Returns:**
+        None - Success is indicated by no error being raised.
+        
+        **Example Request:**
+        ```python
+        await classic_models_delete_orderdetail_by_key(
+            ordernumber=10100,
+            productcode="S10_1678"
+        )
+        ```
+        
+        **Errors:**
+        - `404 Not Found`: The order detail does not exist for this order number/product code combination
+        - `400 Bad Request`: Cannot delete
+        - `401 Unauthorized`: Authentication failed (automatically retried)
+        - `500 Internal Server Error`: Server error occurred
+        
+        **Related Tools:**
+        - Use `classic_models_delete_orderdetail` to delete using ID
+        """
+        await api_client.delete(f"/classic-models/api/v1/orderdetails/{ordernumber}/{productcode}/")
 

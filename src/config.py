@@ -16,6 +16,9 @@ class Config:
         self.api_password = os.getenv("API_PASSWORD", "demo123")
         self.http_port = int(os.getenv("HTTP_PORT", "3000"))
         self.http_bearer_token = os.getenv("HTTP_BEARER_TOKEN", "demo-token")
+        # SSL verification - set to "false" to disable for self-signed certificates
+        ssl_verify = os.getenv("SSL_VERIFY", "true").lower()
+        self.verify_ssl = ssl_verify not in ("false", "0", "no", "off")
         
         # Determine transport from CLI args or env var
         import sys
