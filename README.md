@@ -66,15 +66,35 @@ This MCP server acts as a bridge between **Claude Desktop** and the **Classic Mo
 
 ### Install Dependencies
 
+**Option 1: Using Virtual Environment (Recommended)**
+
+```bash
+# Create virtual environment
+python3.12 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+# venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+**Option 2: Global Installation**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-Or using `uv` (faster):
+**Option 3: Using `uv` (Faster)**
 
 ```bash
 uv pip install -r requirements.txt
 ```
+
+> 💡 **Tip:** Always activate the virtual environment before running the server or tests!
 
 ---
 
